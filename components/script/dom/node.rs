@@ -315,6 +315,8 @@ impl Node {
     /// Fails unless `child` is a child of this node.
     fn remove_child(&self, child: &Node, cached_index: Option<u32>) {
         assert!(child.parent_node.get().as_deref() == Some(self));
+        self.note_dirty_descendants();
+
         let prev_sibling = child.GetPreviousSibling();
         match prev_sibling {
             None => {
@@ -627,17 +629,7 @@ impl Node {
 
     // FIXME(emilio): This and the function below should move to Element.
     pub fn note_dirty_descendants(&self) {
-        debug_assert!(self.is_connected());
-
-        for ancestor in self.inclusive_ancestors(ShadowIncluding::Yes) {
-            if ancestor.get_flag(NodeFlags::HAS_DIRTY_DESCENDANTS) {
-                return;
-            }
-
-            if ancestor.is::<Element>() {
-                ancestor.set_flag(NodeFlags::HAS_DIRTY_DESCENDANTS, true);
-            }
-        }
+        self.owner_doc().note_node_with_dirty_descendants(self);
     }
 
     pub fn has_dirty_descendants(&self) -> bool {
@@ -703,6 +695,22 @@ impl Node {
             current: Some(DomRoot::from_ref(self)),
             next_node: |n| n.GetPreviousSibling(),
         }
+    }
+
+    pub fn common_ancestor(
+        &self,
+        other: &Node,
+        shadow_including: ShadowIncluding,
+    ) -> DomRoot<Node> {
+        for ancestor in self.inclusive_ancestors(shadow_including) {
+            if other
+                .inclusive_ancestors(shadow_including)
+                .any(|node| node == ancestor)
+            {
+                return ancestor;
+            }
+        }
+        unreachable!();
     }
 
     pub fn is_inclusive_ancestor_of(&self, parent: &Node) -> bool {
@@ -1653,7 +1661,7 @@ where
 }
 
 /// Whether a tree traversal should pass shadow tree boundaries.
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum ShadowIncluding {
     No,
     Yes,
