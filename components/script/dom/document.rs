@@ -387,6 +387,7 @@ pub struct Document {
     animation_timeline: DomRefCell<AnimationTimeline>,
     /// Animations for this Document
     animations: DomRefCell<Animations>,
+    dirty_root: MutNullableDom<Element>,
 }
 
 #[derive(JSTraceable, MallocSizeOf)]
@@ -446,6 +447,76 @@ enum ElementLookupResult {
 
 #[allow(non_snake_case)]
 impl Document {
+    pub fn note_node_with_dirty_descendants(&self, node: &Node) {
+        debug_assert!(*node.owner_doc() == *self);
+        if !node.is_connected() {
+            return;
+        }
+
+        let element_parent: DomRoot<Element>;
+        let element = match node.downcast::<Element>() {
+            Some(element) => element,
+            None => {
+                match node
+                    .inclusive_ancestors(ShadowIncluding::Yes)
+                    .nth(1)
+                    .and_then(DomRoot::downcast::<Element>)
+                {
+                    Some(parent) => {
+                        element_parent = parent;
+                        &element_parent
+                    },
+                    None => {
+                        self.dirty_root.set(self.GetDocumentElement().as_deref());
+                        return;
+                    },
+                }
+            },
+        };
+
+        let dirty_root = match self.dirty_root.get() {
+            None => {
+                element
+                    .upcast::<Node>()
+                    .set_flag(NodeFlags::HAS_DIRTY_DESCENDANTS, true);
+                self.dirty_root.set(Some(element));
+                return;
+            },
+            Some(root) => root,
+        };
+
+        for ancestor in element
+            .upcast::<Node>()
+            .inclusive_ancestors(ShadowIncluding::Yes)
+        {
+            if ancestor.get_flag(NodeFlags::HAS_DIRTY_DESCENDANTS) {
+                return;
+            }
+            if ancestor.is::<Element>() {
+                ancestor.set_flag(NodeFlags::HAS_DIRTY_DESCENDANTS, true);
+            }
+        }
+
+        let new_dirty_root = element
+            .upcast::<Node>()
+            .common_ancestor(dirty_root.upcast(), ShadowIncluding::Yes);
+
+        let mut has_dirty_descendants = true;
+        for ancestor in dirty_root
+            .upcast::<Node>()
+            .inclusive_ancestors(ShadowIncluding::Yes)
+        {
+            ancestor.set_flag(NodeFlags::HAS_DIRTY_DESCENDANTS, has_dirty_descendants);
+            has_dirty_descendants &= *ancestor != *new_dirty_root;
+        }
+        self.dirty_root
+            .set(Some(new_dirty_root.downcast::<Element>().unwrap()));
+    }
+
+    pub fn take_dirty_root(&self) -> Option<DomRoot<Element>> {
+        self.dirty_root.take()
+    }
+
     #[inline]
     pub fn loader(&self) -> Ref<DocumentLoader> {
         self.loader.borrow()
@@ -967,8 +1038,14 @@ impl Document {
     }
 
     pub fn dirty_all_nodes(&self) {
-        let root = self.upcast::<Node>();
-        for node in root.traverse_preorder(ShadowIncluding::Yes) {
+        let root = match self.GetDocumentElement() {
+            Some(root) => root,
+            None => return,
+        };
+        for node in root
+            .upcast::<Node>()
+            .traverse_preorder(ShadowIncluding::Yes)
+        {
             node.dirty(NodeDamage::OtherNodeDamage)
         }
     }
@@ -2917,6 +2994,7 @@ impl Document {
                 DomRefCell::new(AnimationTimeline::new())
             },
             animations: DomRefCell::new(Animations::new()),
+            dirty_root: Default::default(),
         }
     }
 
