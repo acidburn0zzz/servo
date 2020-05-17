@@ -1,14 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml">
-  <title>Adopting a &#x3c;use&#x3e; (from an inactive document) requests an external resource</title>
-  <h:link rel="match" href="reference/green-100x100.svg"/>
-  <script type="text/plain" template=""><![CDATA[
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml"><title>Adopting a &lt;use&gt; (from an inactive document) requests an external resource</title><h:link href="reference/green-100x100.svg" rel="match"/><script type="text/plain"><![CDATA[
     <svg xmlns="http://www.w3.org/2000/svg">
       <use href="support/sprites.svg#green-rect"/>
-    </svg>]]>
-  </script>
-  <script>
-    let text = document.querySelector('script[template]').textContent;
-    let doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-    document.documentElement.appendChild(doc.documentElement);
-  </script>
-</svg>
+    </svg>]]></script><script>let text = document.querySelector(&apos;script[template]&apos;).textContent; let doc = new DOMParser().parseFromString(text, &apos;image/svg+xml&apos;); document.documentElement.appendChild(doc.documentElement);</script></svg>
