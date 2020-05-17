@@ -1,42 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     xmlns:h="http://www.w3.org/1999/xhtml"
-     width="800px" height="8000px">
-  <title>&lt;style&gt; type="" edge cases</title>
-  <metadata>
-    <h:link rel="help" href="https://html.spec.whatwg.org/multipage/semantics.html#update-a-style-block"/>
-  </metadata>
-  <h:script src="/resources/testharness.js"/>
-  <h:script src="/resources/testharnessreport.js"/>
-
-  <style>
-  #test1 { color: rgb(0, 128, 0); }
-  </style>
-
-  <style type="">
-  #test2 { color: rgb(0, 128, 0); }
-  </style>
-
-  <style type="TEXT/CsS">
-  #test3 { color: rgb(0, 128, 0); }
-  </style>
-
-  <style type=" text/css ">
-  #test4 { color: rgb(0, 128, 0); }
-  </style>
-
-  <style type="text/css; charset=utf-8">
-  #test5 { color: rgb(0, 128, 0); }
-  </style>
-
-  <h:body>
-    <h:div id="test1"/>
-    <h:div id="test2"/>
-    <h:div id="test3"/>
-    <h:div id="test4"/>
-    <h:div id="test5"/>
-
-    <h:script><![CDATA[
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml" width="800" height="8000"><title>&lt;style&gt; type=&quot;&quot; edge cases</title><metadata><h:link href="https://html.spec.whatwg.org/multipage/semantics.html#update-a-style-block" rel="help"/></metadata><h:script src="/resources/testharness.js"/><h:script src="/resources/testharnessreport.js"/><style>#test1{color:green}</style><style>#test2{color:green}</style><style type="TEXT/CsS">#test3{color:green}</style><style type="text/css">#test4{color:green}</style><style type="text/css; charset=utf-8">#test5{color:green}</style><h:body><h:div id="test1"/><h:div id="test2"/><h:div id="test3"/><h:div id="test4"/><h:div id="test5"/><h:script><![CDATA[
     "use strict";
 
     test(() => {
@@ -70,6 +32,4 @@
     function assertNotApplied(id) {
       assert_not_equals(getColor(id), "rgb(0, 128, 0)");
     }
-    ]]></h:script>
-  </h:body>
-</svg>
+    ]]></h:script></h:body></svg>
